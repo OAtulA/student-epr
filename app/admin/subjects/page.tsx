@@ -1,95 +1,118 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Discipline {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface Subject {
-  id: string
-  code: string
-  name: string
-  semester: number
+  id: string;
+  code: string;
+  name: string;
+  semester: number;
   discipline: {
-    name: string
-  }
+    name: string;
+  };
 }
 
 export default function SubjectsPage() {
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [disciplines, setDisciplines] = useState<Discipline[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    code: '',
-    name: '',
+    code: "",
+    name: "",
     semester: 1,
-    disciplineId: ''
-  })
+    batch: "2022-2026", // Default batch
+    disciplineId: "",
+  });
+
+  const batches = ["2022-2026", "2023-2027", "2024-2028", "2025-2029"];
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   async function fetchData() {
     try {
       const [subjectsRes, disciplinesRes] = await Promise.all([
-        fetch('/api/admin/subjects'),
-        fetch('/api/admin/disciplines')
-      ])
+        fetch("/api/admin/subjects"),
+        fetch("/api/admin/disciplines"),
+      ]);
 
       if (subjectsRes.ok) {
-        const subjectsData = await subjectsRes.json()
-        setSubjects(subjectsData.subjects)
+        const subjectsData = await subjectsRes.json();
+        setSubjects(subjectsData.subjects);
       }
 
       if (disciplinesRes.ok) {
-        const disciplinesData = await disciplinesRes.json()
-        setDisciplines(disciplinesData.disciplines)
+        const disciplinesData = await disciplinesRes.json();
+        setDisciplines(disciplinesData.disciplines);
       }
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error("Error fetching data:", error);
     }
   }
 
   async function handleAddSubject(event: React.FormEvent) {
-    event.preventDefault()
-    if (!formData.code || !formData.name || !formData.disciplineId) return
+    event.preventDefault();
+    if (!formData.code || !formData.name || !formData.disciplineId) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/subjects', {
-        method: 'POST',
+      const response = await fetch("/api/admin/subjects", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
-      })
+      });
 
       if (response.ok) {
         setFormData({
-          code: '',
-          name: '',
+          code: "",
+          name: "",
           semester: 1,
-          disciplineId: ''
-        })
-        fetchData()
+          batch: "2022-2026",
+          disciplineId: "",
+        });
+        fetchData();
       } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to create subject')
+        const error = await response.json();
+        alert(error.error || "Failed to create subject");
       }
     } catch (error) {
-      console.error('Error adding subject:', error)
-      alert('Failed to create subject')
+      console.error("Error adding subject:", error);
+      alert("Failed to create subject");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -112,6 +135,43 @@ export default function SubjectsPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAddSubject} className="space-y-4">
+              {/* <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">Subject Code</Label>
+                  <Input
+                    id="code"
+                    placeholder="e.g., CSE101"
+                    value={formData.code}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        code: e.target.value.toUpperCase(),
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="semester">Semester</Label>
+                  <Select
+                    value={formData.semester.toString()}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, semester: parseInt(value) })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                        <SelectItem key={sem} value={sem.toString()}>
+                          Semester {sem}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div> */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="code">Subject Code</Label>
@@ -119,15 +179,22 @@ export default function SubjectsPage() {
                     id="code"
                     placeholder="e.g., CSE101"
                     value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        code: e.target.value.toUpperCase(),
+                      })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="semester">Semester</Label>
-                  <Select 
-                    value={formData.semester.toString()} 
-                    onValueChange={(value) => setFormData({ ...formData, semester: parseInt(value) })}
+                  <Select
+                    value={formData.semester.toString()}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, semester: parseInt(value) })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select semester" />
@@ -144,21 +211,47 @@ export default function SubjectsPage() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="batch">Batch</Label>
+                <Select
+                  value={formData.batch}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, batch: value })
+                  }
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select batch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {batches.map((batch) => (
+                      <SelectItem key={batch} value={batch}>
+                        {batch}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="name">Subject Name</Label>
                 <Input
                   id="name"
                   placeholder="e.g., Data Structures"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   required
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="discipline">Discipline</Label>
-                <Select 
-                  value={formData.disciplineId} 
-                  onValueChange={(value) => setFormData({ ...formData, disciplineId: value })}
+                <Select
+                  value={formData.disciplineId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, disciplineId: value })
+                  }
                   required
                 >
                   <SelectTrigger>
@@ -175,7 +268,7 @@ export default function SubjectsPage() {
               </div>
 
               <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? 'Adding...' : 'Add Subject'}
+                {isLoading ? "Adding..." : "Add Subject"}
               </Button>
             </form>
           </CardContent>
@@ -202,8 +295,12 @@ export default function SubjectsPage() {
                 <TableBody>
                   {subjects.map((subject) => (
                     <TableRow key={subject.id}>
-                      <TableCell className="font-mono">{subject.code}</TableCell>
-                      <TableCell className="font-medium">{subject.name}</TableCell>
+                      <TableCell className="font-mono">
+                        {subject.code}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {subject.name}
+                      </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">
                           {subject.discipline.name}
@@ -215,7 +312,7 @@ export default function SubjectsPage() {
                 </TableBody>
               </Table>
             </div>
-            
+
             {subjects.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 No subjects found. Add your first subject.
@@ -225,5 +322,5 @@ export default function SubjectsPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

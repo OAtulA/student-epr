@@ -47,6 +47,7 @@ export const createSubjectSchema = z.object({
   code: z.string().min(1, 'Subject code is required'),
   name: z.string().min(2, 'Subject name is required'),
   semester: z.number().min(1).max(8),
+  batch: z.string().min(4, 'Batch is required (e.g., 2022-2026)'),
   disciplineId: z.string().min(1, 'Discipline is required'),
 })
 

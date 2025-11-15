@@ -67,20 +67,22 @@ model Discipline {
 
 model Subject {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  code          String   @unique
+  code          String
   name          String
   semester      Int
+  batch         String   @default("2022-2026")
   disciplineId  String   @db.ObjectId
   discipline    Discipline @relation(fields: [disciplineId], references: [id])
-  
-  teacherSubjects TeacherSubject[]
-  marks          Marks[]
-  advice         Advice[]
 
-  // unique constraint for name + discipline + semester combination
-  @@unique([name, disciplineId, semester])
+  teacherSubjects TeacherSubject[]
+  marks           Marks[]
+  advice          Advice[]
+
+  @@unique([code, disciplineId, semester, batch])
+
   @@map("subjects")
 }
+
 
 model TeacherSubject {
   id        String @id @default(auto()) @map("_id") @db.ObjectId

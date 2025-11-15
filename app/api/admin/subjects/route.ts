@@ -7,7 +7,7 @@ import { createSubjectSchema } from "@/lib/validations/schemas";
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    // @ts-expect-error session user role exists
+    // @ts-expect-error -- session user role exists
     if (!session || session?.user?.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -17,31 +17,22 @@ export async function POST(request: NextRequest) {
     // Validate with Zod
     const validatedData = createSubjectSchema.parse(json);
 
-    // Check if subject code already exists (globally unique)
-    const existingSubjectByCode = await db.subject.findUnique({
-      where: { code: validatedData.code },
-    });
-
-    if (existingSubjectByCode) {
-      return NextResponse.json(
-        { error: "Subject with this code already exists" },
-        { status: 400 }
-      );
-    }
-
-    // Check if subject with same name already exists in the same discipline and semester
-    const existingSubjectByName = await db.subject.findFirst({
-      where: {
-        name: validatedData.name,
-        disciplineId: validatedData.disciplineId,
-        semester: validatedData.semester,
+    // Check if subject with same code, discipline, semester, and batch already exists
+    const existingSubject = await db.subject.findUnique({
+      where: { 
+        code_disciplineId_semester_batch: {
+          code: validatedData.code,
+          disciplineId: validatedData.disciplineId,
+          semester: validatedData.semester,
+          batch: validatedData.batch
+        }
       },
     });
 
-    if (existingSubjectByName) {
+    if (existingSubject) {
       return NextResponse.json(
         { 
-          error: `Subject "${validatedData.name}" already exists in this discipline for semester ${validatedData.semester}. Use a different name or semester.` 
+          error: `Subject with code "${validatedData.code}" already exists in this discipline for semester ${validatedData.semester} and batch ${validatedData.batch}.` 
         },
         { status: 400 }
       );
@@ -53,6 +44,7 @@ export async function POST(request: NextRequest) {
         code: validatedData.code,
         name: validatedData.name,
         semester: validatedData.semester,
+        batch: validatedData.batch,
         disciplineId: validatedData.disciplineId,
       },
       include: {
@@ -85,7 +77,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    // @ts-expect-error session user role exists
+    // @ts-expect-error -- session user role exists
     if (!session || session?.user?.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -103,6 +95,9 @@ export async function GET() {
           discipline: {
             name: "asc",
           },
+        },
+        {
+          batch: "desc",
         },
         {
           semester: "asc",
