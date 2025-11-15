@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/providers/auth-provider'
 
+import {Toast, Toaster} from "react-hot-toast"
+
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -22,6 +24,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
+        <Toaster position="top-right" />
       </body>
     </html>
   )

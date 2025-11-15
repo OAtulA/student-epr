@@ -7,8 +7,8 @@ import { createSubjectSchema } from "@/lib/validations/schemas";
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    // @ts-expect-error user role exists
-    if (!session || session.user.role !== "ADMIN") {
+    // @ts-expect-error session user role exists
+    if (!session || session?.user?.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -17,14 +17,32 @@ export async function POST(request: NextRequest) {
     // Validate with Zod
     const validatedData = createSubjectSchema.parse(json);
 
-    // Check if subject code already exists
-    const existingSubject = await db.subject.findUnique({
+    // Check if subject code already exists (globally unique)
+    const existingSubjectByCode = await db.subject.findUnique({
       where: { code: validatedData.code },
     });
 
-    if (existingSubject) {
+    if (existingSubjectByCode) {
       return NextResponse.json(
         { error: "Subject with this code already exists" },
+        { status: 400 }
+      );
+    }
+
+    // Check if subject with same name already exists in the same discipline and semester
+    const existingSubjectByName = await db.subject.findFirst({
+      where: {
+        name: validatedData.name,
+        disciplineId: validatedData.disciplineId,
+        semester: validatedData.semester,
+      },
+    });
+
+    if (existingSubjectByName) {
+      return NextResponse.json(
+        { 
+          error: `Subject "${validatedData.name}" already exists in this discipline for semester ${validatedData.semester}. Use a different name or semester.` 
+        },
         { status: 400 }
       );
     }
@@ -67,8 +85,8 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    // @ts-expect-error user role exists
-    if (!session || session.user.role !== "ADMIN") {
+    // @ts-expect-error session user role exists
+    if (!session || session?.user?.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

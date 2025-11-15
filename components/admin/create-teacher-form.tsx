@@ -6,29 +6,28 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createTeacherSchema } from '@/lib/validations/schemas'
+import toast from 'react-hot-toast'
 
 export function CreateTeacherForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [formData, setFormData] = useState({
+    teacherId: '',
+    name: '',
+    joiningDate: '',
+    email: '',
+    password: ''
+  })
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
     setError('')
 
-    const formData = new FormData(event.currentTarget)
-    const data = {
-      teacherId: formData.get('teacherId') as string,
-      name: formData.get('name') as string,
-      joiningDate: formData.get('joiningDate') as string,
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
-    }
-
     try {
       // Validate with Zod
-      createTeacherSchema.parse(data)
+      createTeacherSchema.parse(formData)
 
       const response = await fetch('/api/admin/users', {
         method: 'POST',
@@ -36,18 +35,27 @@ export function CreateTeacherForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...data,
+          ...formData,
           role: 'TEACHER'
         }),
       })
 
       if (!response.ok) {
         const error = await response.json()
+        toast.error(error.message || 'Failed to create teacher')
         throw new Error(error.message || 'Failed to create teacher')
       }
 
-      // Reset form
-      event.currentTarget.reset()
+      toast.success('Teacher created successfully')
+      // Reset form using state
+      setFormData({
+        teacherId: '',
+        name: '',
+        joiningDate: '',
+        email: '',
+        password: ''
+      })
+      
       router.refresh()
       setError('')
       
@@ -62,6 +70,13 @@ export function CreateTeacherForm() {
     }
   }
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -71,6 +86,8 @@ export function CreateTeacherForm() {
             id="teacherId"
             name="teacherId"
             placeholder="Enter teacher ID"
+            value={formData.teacherId}
+            onChange={(e) => handleInputChange('teacherId', e.target.value)}
             required
           />
         </div>
@@ -80,6 +97,8 @@ export function CreateTeacherForm() {
             id="name"
             name="name"
             placeholder="Enter full name"
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
             required
           />
         </div>
@@ -92,6 +111,8 @@ export function CreateTeacherForm() {
             id="joiningDate"
             name="joiningDate"
             type="date"
+            value={formData.joiningDate}
+            onChange={(e) => handleInputChange('joiningDate', e.target.value)}
             required
           />
         </div>
@@ -102,6 +123,8 @@ export function CreateTeacherForm() {
             name="email"
             type="email"
             placeholder="Enter email address"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
             required
           />
         </div>
@@ -114,6 +137,8 @@ export function CreateTeacherForm() {
           name="password"
           type="password"
           placeholder="Enter temporary password"
+          value={formData.password}
+          onChange={(e) => handleInputChange('password', e.target.value)}
           required
         />
       </div>

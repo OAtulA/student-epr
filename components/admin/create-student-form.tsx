@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createStudentSchema } from '@/lib/validations/schemas'
+import toast from 'react-hot-toast'
 
 const disciplines = ['CSE', 'IT', 'ECE', 'EEE', 'ML', 'DS'] as const
 const batches = ['2022-2026', '2023-2027', '2024-2028', '2025-2029'] as const
@@ -15,25 +16,23 @@ export function CreateStudentForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [formData, setFormData] = useState({
+    enrollNo: '',
+    name: '',
+    batch: '',
+    discipline: '',
+    email: '',
+    password: ''
+  })
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
     setError('')
 
-    const formData = new FormData(event.currentTarget)
-    const data = {
-      enrollNo: formData.get('enrollNo') as string,
-      name: formData.get('name') as string,
-      batch: formData.get('batch') as string,
-      discipline: formData.get('discipline') as string,
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
-    }
-
     try {
       // Validate with Zod
-      createStudentSchema.parse(data)
+      createStudentSchema.parse(formData)
 
       const response = await fetch('/api/admin/users', {
         method: 'POST',
@@ -41,18 +40,28 @@ export function CreateStudentForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...data,
+          ...formData,
           role: 'STUDENT'
         }),
       })
 
       if (!response.ok) {
         const error = await response.json()
+          toast.error(error.message || 'Failed to create student')
         throw new Error(error.message || 'Failed to create student')
       }
 
-      // Reset form
-      event.currentTarget.reset()
+      toast.success('Student created successfully')
+      // Reset form using state
+      setFormData({
+        enrollNo: '',
+        name: '',
+        batch: '',
+        discipline: '',
+        email: '',
+        password: ''
+      })
+      
       router.refresh()
       setError('')
       
@@ -67,6 +76,13 @@ export function CreateStudentForm() {
     }
   }
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -76,6 +92,8 @@ export function CreateStudentForm() {
             id="enrollNo"
             name="enrollNo"
             placeholder="Enter enrollment number"
+            value={formData.enrollNo}
+            onChange={(e) => handleInputChange('enrollNo', e.target.value)}
             required
           />
         </div>
@@ -85,6 +103,8 @@ export function CreateStudentForm() {
             id="name"
             name="name"
             placeholder="Enter full name"
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
             required
           />
         </div>
@@ -93,7 +113,11 @@ export function CreateStudentForm() {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="batch">Batch</Label>
-          <Select name="batch" required>
+          <Select 
+            value={formData.batch} 
+            onValueChange={(value) => handleInputChange('batch', value)}
+            required
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select batch" />
             </SelectTrigger>
@@ -108,7 +132,11 @@ export function CreateStudentForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="discipline">Discipline</Label>
-          <Select name="discipline" required>
+          <Select 
+            value={formData.discipline} 
+            onValueChange={(value) => handleInputChange('discipline', value)}
+            required
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select discipline" />
             </SelectTrigger>
@@ -131,6 +159,8 @@ export function CreateStudentForm() {
             name="email"
             type="email"
             placeholder="Enter email address"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
             required
           />
         </div>
@@ -141,6 +171,8 @@ export function CreateStudentForm() {
             name="password"
             type="password"
             placeholder="Enter temporary password"
+            value={formData.password}
+            onChange={(e) => handleInputChange('password', e.target.value)}
             required
           />
         </div>
