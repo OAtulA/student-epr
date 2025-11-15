@@ -1,106 +1,142 @@
 // app/teacher/performance/page.tsx
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { PerformanceDemo } from '@/components/teacher/performance-demo'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { useState, useEffect, useCallback } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PerformanceDemo } from "@/components/teacher/performance-demo";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 interface PerformanceData {
-  assignmentId: string
-  assignmentName: string
-  averageMarks: number
-  totalStudents: number
-  passedStudents: number
-  distinctionStudents: number
-  subjectWise: SubjectPerformance[]
-  markDistribution: MarkDistribution[]
-  batchComparison: BatchComparison[]
-  lowPerformers?: LowPerformer[]
+  assignmentId: string;
+  assignmentName: string;
+  averageMarks: number;
+  totalStudents: number;
+  passedStudents: number;
+  distinctionStudents: number;
+  subjectWise: SubjectPerformance[];
+  markDistribution: MarkDistribution[];
+  batchComparison: BatchComparison[];
+  lowPerformers?: LowPerformer[];
 }
 
 interface SubjectPerformance {
-  subject: string
-  code: string
-  average: number
-  highest: number
-  lowest: number
-  passPercentage: number
+  subject: string;
+  code: string;
+  average: number;
+  highest: number;
+  lowest: number;
+  passPercentage: number;
 }
 
 interface MarkDistribution {
-  range: string
-  count: number
+  range: string;
+  count: number;
 }
 
 interface BatchComparison {
-  batch: string
-  average: number
-  subject: string
+  batch: string;
+  average: number;
+  subject: string;
 }
 
 interface LowPerformer {
-  name: string
-  enrollNo: string
-  marks: number
-  subject: string
+  name: string;
+  enrollNo: string;
+  marks: number;
+  subject: string;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
 export default function PerformanceAnalyticsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [assignments, setAssignments] = useState<any[]>([])
-  const [selectedAssignment, setSelectedAssignment] = useState<string>('')
-  const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [selectedAssignment, setSelectedAssignment] = useState<string>("");
+  const [performanceData, setPerformanceData] =
+    useState<PerformanceData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    fetchAssignments()
-  }, [])
+    fetchAssignments();
+  }, []);
 
+  async function fetchPerformanceDataHelper() {
+    if (!selectedAssignment) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `/api/teacher/performance?assignmentId=${selectedAssignment}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setPerformanceData(data.performance);
+      }
+    } catch (error) {
+      console.error("Error fetching performance data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const fetchPerformanceData = useCallback(fetchPerformanceDataHelper, [
+    selectedAssignment,
+  ]);
   useEffect(() => {
     if (selectedAssignment) {
-      fetchPerformanceData()
+      fetchPerformanceData();
     }
-  }, [selectedAssignment])
+  }, [fetchPerformanceData, selectedAssignment]);
 
   async function fetchAssignments() {
     try {
-      const response = await fetch('/api/teacher/assignments')
+      const response = await fetch("/api/teacher/assignments");
       if (response.ok) {
-        const data = await response.json()
-        setAssignments(data.assignments)
+        const data = await response.json();
+        setAssignments(data.assignments);
       }
     } catch (error) {
-      console.error('Error fetching assignments:', error)
+      console.error("Error fetching assignments:", error);
     }
   }
 
-  async function fetchPerformanceData() {
-    if (!selectedAssignment) return
-
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/teacher/performance?assignmentId=${selectedAssignment}`)
-      if (response.ok) {
-        const data = await response.json()
-        setPerformanceData(data.performance)
-      }
-    } catch (error) {
-      console.error('Error fetching performance data:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const selectedAssignmentObj = assignments.find(a => a.id === selectedAssignment)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const selectedAssignmentObj = assignments.find(
+    (a) => a.id === selectedAssignment
+  );
 
   const renderLivePerformance = () => {
-    if (!performanceData) return null
+    if (!performanceData) return null;
 
     return (
       <div className="space-y-6">
@@ -108,48 +144,63 @@ export default function PerformanceAnalyticsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Marks</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Average Marks
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{performanceData.averageMarks.toFixed(1)}</div>
+              <div className="text-2xl font-bold">
+                {performanceData.averageMarks.toFixed(1)}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Overall class average
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Students
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{performanceData.totalStudents}</div>
+              <div className="text-2xl font-bold">
+                {performanceData.totalStudents}
+              </div>
               <p className="text-xs text-muted-foreground">
                 In this assignment
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pass Percentage</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pass Percentage
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {((performanceData.passedStudents / performanceData.totalStudents) * 100).toFixed(1)}%
+                {(
+                  (performanceData.passedStudents /
+                    performanceData.totalStudents) *
+                  100
+                ).toFixed(1)}
+                %
               </div>
-              <p className="text-xs text-muted-foreground">
-                Students passed
-              </p>
+              <p className="text-xs text-muted-foreground">Students passed</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Distinction</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{performanceData.distinctionStudents}</div>
+              <div className="text-2xl font-bold">
+                {performanceData.distinctionStudents}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Students &gt;= 75%
               </p>
@@ -175,7 +226,11 @@ export default function PerformanceAnalyticsPage() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="count" name="Number of Students" fill="#0088FE" />
+                  <Bar
+                    dataKey="count"
+                    name="Number of Students"
+                    fill="#0088FE"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -185,22 +240,27 @@ export default function PerformanceAnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Result Overview</CardTitle>
-              <CardDescription>
-                Pass vs Fail distribution
-              </CardDescription>
+              <CardDescription>Pass vs Fail distribution</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
                     data={[
-                      { name: 'Passed', value: performanceData.passedStudents },
-                      { name: 'Failed', value: performanceData.totalStudents - performanceData.passedStudents }
+                      { name: "Passed", value: performanceData.passedStudents },
+                      {
+                        name: "Failed",
+                        value:
+                          performanceData.totalStudents -
+                          performanceData.passedStudents,
+                      },
                     ]}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent! * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name} ${(percent! * 100).toFixed(0)}%`
+                    }
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -231,8 +291,16 @@ export default function PerformanceAnalyticsPage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="average" name="Average Marks" fill="#8884D8" />
-                    <Bar dataKey="highest" name="Highest Marks" fill="#00C49F" />
+                    <Bar
+                      dataKey="average"
+                      name="Average Marks"
+                      fill="#8884D8"
+                    />
+                    <Bar
+                      dataKey="highest"
+                      name="Highest Marks"
+                      fill="#00C49F"
+                    />
                     <Bar dataKey="lowest" name="Lowest Marks" fill="#FF8042" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -257,7 +325,13 @@ export default function PerformanceAnalyticsPage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="average" name="Average Marks" stroke="#0088FE" strokeWidth={2} />
+                    <Line
+                      type="monotone"
+                      dataKey="average"
+                      name="Average Marks"
+                      stroke="#0088FE"
+                      strokeWidth={2}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -266,45 +340,51 @@ export default function PerformanceAnalyticsPage() {
         </div>
 
         {/* Low Performers */}
-        {performanceData.lowPerformers && performanceData.lowPerformers.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Students Needing Attention</CardTitle>
-              <CardDescription>
-                Students scoring below 40% in any subject
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {performanceData.lowPerformers.map((student, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                          <span className="text-sm font-medium text-red-600">!</span>
+        {performanceData.lowPerformers &&
+          performanceData.lowPerformers.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Students Needing Attention</CardTitle>
+                <CardDescription>
+                  Students scoring below 40% in any subject
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {performanceData.lowPerformers.map((student, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="shrink-0">
+                          <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                            <span className="text-sm font-medium text-red-600">
+                              !
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{student.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {student.enrollNo} • {student.subject}
+                          </p>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{student.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {student.enrollNo} • {student.subject}
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-red-600">
+                          {student.marks}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Needs improvement
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-red-600">
-                        {student.marks}%
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Needs improvement
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         {/* Detailed Performance Table */}
         <Card>
@@ -328,25 +408,42 @@ export default function PerformanceAnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody>
+                   {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
                   {performanceData.subjectWise.map((subject, index) => (
                     <tr key={subject.code} className="border-b">
                       <td className="p-3">
                         <div className="font-medium">{subject.code}</div>
-                        <div className="text-sm text-muted-foreground">{subject.subject}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {subject.subject}
+                        </div>
                       </td>
-                      <td className="p-3 text-center font-medium">{subject.average.toFixed(1)}</td>
-                      <td className="p-3 text-center text-green-600 font-medium">{subject.highest}</td>
-                      <td className="p-3 text-center text-red-600 font-medium">{subject.lowest}</td>
-                      <td className="p-3 text-center">{subject.passPercentage.toFixed(1)}%</td>
+                      <td className="p-3 text-center font-medium">
+                        {subject.average.toFixed(1)}
+                      </td>
+                      <td className="p-3 text-center text-green-600 font-medium">
+                        {subject.highest}
+                      </td>
+                      <td className="p-3 text-center text-red-600 font-medium">
+                        {subject.lowest}
+                      </td>
                       <td className="p-3 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          subject.average >= 70 
-                            ? 'bg-green-100 text-green-800' 
-                            : subject.average >= 60 
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {subject.average >= 70 ? 'Excellent' : subject.average >= 60 ? 'Good' : 'Needs Attention'}
+                        {subject.passPercentage.toFixed(1)}%
+                      </td>
+                      <td className="p-3 text-center">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            subject.average >= 70
+                              ? "bg-green-100 text-green-800"
+                              : subject.average >= 60
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {subject.average >= 70
+                            ? "Excellent"
+                            : subject.average >= 60
+                            ? "Good"
+                            : "Needs Attention"}
                         </span>
                       </td>
                     </tr>
@@ -357,8 +454,8 @@ export default function PerformanceAnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -380,7 +477,8 @@ export default function PerformanceAnalyticsPage() {
             <CardHeader>
               <CardTitle>Demo Performance Dashboard</CardTitle>
               <CardDescription>
-                This shows sample data and charts. Switch to &quot;Live Data&quot; to see your actual student performance.
+                This shows sample data and charts. Switch to &quot;Live
+                Data&quot; to see your actual student performance.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -401,17 +499,22 @@ export default function PerformanceAnalyticsPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="assignment">Teaching Assignment</Label>
-                  <Select value={selectedAssignment} onValueChange={setSelectedAssignment}>
+                  <Select
+                    value={selectedAssignment}
+                    onValueChange={setSelectedAssignment}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select subject and batch" />
                     </SelectTrigger>
                     <SelectContent>
                       {assignments.map((assignment) => (
                         <SelectItem key={assignment.id} value={assignment.id}>
-                          {assignment.subject.code} - {assignment.subject.name} ({assignment.subject.discipline.name})
+                          {assignment.subject.code} - {assignment.subject.name}{" "}
+                          ({assignment.subject.discipline.name})
                           <br />
                           <span className="text-sm text-muted-foreground">
-                            Batch: {assignment.batch} | Rolls: {assignment.startRoll}-{assignment.endRoll}
+                            Batch: {assignment.batch} | Rolls:{" "}
+                            {assignment.startRoll}-{assignment.endRoll}
                           </span>
                         </SelectItem>
                       ))}
@@ -446,7 +549,8 @@ export default function PerformanceAnalyticsPage() {
             <Card>
               <CardContent className="py-8">
                 <div className="text-center text-muted-foreground">
-                  No performance data available for this assignment. Try uploading marks first.
+                  No performance data available for this assignment. Try
+                  uploading marks first.
                 </div>
               </CardContent>
             </Card>
@@ -454,5 +558,5 @@ export default function PerformanceAnalyticsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

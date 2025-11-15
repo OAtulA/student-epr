@@ -37,6 +37,7 @@ const demoPerformanceData = {
   ]
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
 export function PerformanceDemo() {
@@ -212,7 +213,7 @@ export function PerformanceDemo() {
             {demoPerformanceData.lowPerformers.map((student, index) => (
               <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                       <span className="text-sm font-medium text-red-600">!</span>
                     </div>
@@ -260,6 +261,7 @@ export function PerformanceDemo() {
                 </tr>
               </thead>
               <tbody>
+                 {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
                 {demoPerformanceData.subjectWise.map((subject, index) => (
                   <tr key={subject.code} className="border-b">
                     <td className="p-3">
