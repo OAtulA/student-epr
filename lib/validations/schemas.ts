@@ -35,10 +35,9 @@ export const createTeacherSchema = z.object({
 export const marksSchema = z.object({
   studentId: z.string().min(1, "Student is required"),
   teacherSubjectId: z.string().min(1, "Subject assignment is required"),
-  midSem: z.number().min(0).max(30).optional(), // Max 30 for mid sem
-  endSem: z.number().min(0).max(50).optional(), // Max 50 for end sem
-  internal: z.number().min(0).max(20).optional(), // Max 20 for internal
-  total: z.number().min(0).max(100).optional(),
+  midSem: z.number().min(0).max(25).optional().nullable(), // Make it optional and nullable
+  endSem: z.number().min(0).max(75).optional().nullable(), // Make it optional and nullable
+  total: z.number().min(0).max(100).optional().nullable(),
 });
 
 export const uploadMarksSchema = z.object({

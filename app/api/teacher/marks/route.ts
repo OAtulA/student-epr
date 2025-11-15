@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { marksSchema, uploadMarksSchema } from "@/lib/validations/schemas";
 import { AuthSession } from "@/types";
 
 export async function POST(request: NextRequest) {
@@ -14,9 +13,9 @@ export async function POST(request: NextRequest) {
     }
 
     const json = await request.json();
+    const { marks, updateType } = json;
 
-    // Validate with Zod
-    const validatedData = uploadMarksSchema.parse(json);
+    console.log("📥 Received marks data:", { marks, updateType });
 
     // Get teacher
     const teacher = await db.teacher.findUnique({
@@ -27,99 +26,72 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
     }
 
-    // Verify that the teacher owns all the assignments being modified
-    for (const markData of validatedData.marks) {
+    // Process each mark
+    const results = [];
+    for (const markData of marks) {
+      console.log("🔄 Processing mark:", markData);
+
+      // Verify assignment belongs to teacher
       const assignment = await db.teacherSubject.findUnique({
         where: { id: markData.teacherSubjectId },
       });
 
       if (!assignment || assignment.teacherId !== teacher.id) {
-        return NextResponse.json(
-          { error: "Unauthorized to modify marks for this assignment" },
-          { status: 401 }
-        );
+        console.log("❌ Unauthorized assignment:", markData.teacherSubjectId);
+        continue; // Skip this mark
       }
 
-      // Verify student exists and is in the correct batch/discipline
-      const student = await db.student.findUnique({
-        where: { id: markData.studentId },
+      // Calculate total if both marks are present
+      let total = undefined;
+      if (markData.midSem !== undefined && markData.endSem !== undefined) {
+        total = markData.midSem + markData.endSem;
+      } else if (updateType === "mid" && markData.midSem !== undefined) {
+        total = markData.midSem; // For mid-sem only, total is just midSem
+      }
+
+      console.log("🧮 Calculated total:", total);
+
+      // Upsert the mark
+      const result = await db.marks.upsert({
+        where: {
+          studentId_teacherSubjectId: {
+            studentId: markData.studentId,
+            teacherSubjectId: markData.teacherSubjectId,
+          },
+        },
+        update: {
+          // Update only provided fields
+          ...(markData.midSem !== undefined && { midSem: markData.midSem }),
+          ...(markData.endSem !== undefined && { endSem: markData.endSem }),
+          ...(total !== undefined && { total }),
+        },
+        create: {
+          studentId: markData.studentId,
+          teacherSubjectId: markData.teacherSubjectId,
+          midSem: markData.midSem,
+          endSem: markData.endSem,
+          total,
+        },
         include: {
-          user: {
+          student: {
             select: {
-              role: true,
+              name: true,
+              enrollNo: true,
             },
           },
         },
       });
 
-      if (!student || student.user.role !== "STUDENT") {
-        return NextResponse.json(
-          { error: "Invalid student" },
-          { status: 400 }
-        );
-      }
+      results.push(result);
+      console.log("✅ Mark saved:", result);
     }
 
-    // Use transaction to ensure all marks are created/updated
-    const results = await db.$transaction(
-      validatedData.marks.map((markData) =>
-        db.marks.upsert({
-          where: {
-            studentId_teacherSubjectId: {
-              studentId: markData.studentId,
-              teacherSubjectId: markData.teacherSubjectId,
-            },
-          },
-          update: {
-            midSem: markData.midSem,
-            endSem: markData.endSem,
-            internal: markData.internal,
-            total: markData.total,
-          },
-          create: {
-            studentId: markData.studentId,
-            teacherSubjectId: markData.teacherSubjectId,
-            midSem: markData.midSem,
-            endSem: markData.endSem,
-            internal: markData.internal,
-            total: markData.total,
-          },
-          include: {
-            student: {
-              select: {
-                name: true,
-                enrollNo: true,
-              },
-            },
-            teacherSubject: {
-              include: {
-                subject: {
-                  select: {
-                    code: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
-        })
-      )
-    );
-
     return NextResponse.json({
-      message: "Marks uploaded successfully",
+      message: `Marks uploaded successfully (${updateType}-sem)`,
       marks: results,
     });
   } catch (error) {
-    console.error("Error uploading marks:", error);
-
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json(
-        { error: "Invalid marks data provided" },
-        { status: 400 }
-      );
-    }
-
+    console.error("❌ Error uploading marks:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -129,7 +101,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session: AuthSession|null = await getServerSession(authOptions);
+    const session:AuthSession|null = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "TEACHER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -137,6 +109,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const assignmentId = searchParams.get("assignmentId");
+
+    console.log("📥 Fetching marks for assignment:", assignmentId);
 
     // Get teacher
     const teacher = await db.teacher.findUnique({
@@ -147,7 +121,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
     }
 
-    
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
       teacherSubject: {
@@ -181,11 +154,9 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-    //   orderBy: {
-    //     updatedAt: "desc",
-    //   },
-      take: 50, // Limit to recent marks
     });
+
+    console.log("✅ Marks fetched:", marks.length);
 
     return NextResponse.json({ marks });
   } catch (error) {

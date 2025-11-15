@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/api/teacher/performance/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -78,6 +77,7 @@ async function getAssignmentPerformance(assignmentId: string, teacherId: string)
       subjectWise: [],
       markDistribution: [],
       batchComparison: [],
+      lowPerformers: [],
     };
   }
 
@@ -106,6 +106,16 @@ async function getAssignmentPerformance(assignmentId: string, teacherId: string)
     passPercentage: (passedStudents / totalStudents) * 100,
   }];
 
+  // Get low performers (students with marks < 40)
+  const lowPerformers = marks
+    .filter(mark => (mark.total || 0) < 40)
+    .map(mark => ({
+      name: mark.student.name,
+      enrollNo: mark.student.enrollNo,
+      marks: mark.total || 0,
+      subject: assignment.subject.name,
+    }));
+
   // Get batch comparison data
   const batchComparison = await getBatchComparison(assignment.subject.id, teacherId);
 
@@ -119,6 +129,7 @@ async function getAssignmentPerformance(assignmentId: string, teacherId: string)
     subjectWise,
     markDistribution,
     batchComparison,
+    lowPerformers,
   };
 }
 

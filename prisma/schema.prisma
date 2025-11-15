@@ -104,10 +104,9 @@ model Marks {
   id               String @id @default(auto()) @map("_id") @db.ObjectId
   studentId        String @db.ObjectId
   teacherSubjectId String @db.ObjectId
-  midSem           Float? // Mid semester marks
-  endSem           Float? // End semester marks
-  internal         Float? // Internal assessment marks
-  total            Float? // Calculated total
+  midSem           Float? // Mid semester marks (25)
+  endSem           Float? // End semester marks (75)
+  total            Float? // Calculated total (100)
 
   student        Student        @relation(fields: [studentId], references: [id])
   teacherSubject TeacherSubject @relation(fields: [teacherSubjectId], references: [id])
