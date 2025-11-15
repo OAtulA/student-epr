@@ -289,7 +289,7 @@ export default async function TeacherDashboard() {
                     Total: {mark.total || 'N/A'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    M: {mark.midSem || '-'} E: {mark.endSem || '-'} I: {mark.internal || '-'}
+                    M: {mark.midSem || '-'} E: {mark.endSem || '-'}
                   </p>
                 </div>
               </div>
