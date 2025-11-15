@@ -213,8 +213,9 @@ async function main() {
   const hashedStudentPassword = await bcrypt.hash("student123", 12);
 
   // CSE Students
-  for (let i = 1; i <= 10; i++) {
-    const enrollNo = `2022CSE${i.toString().padStart(3, "0")}`;
+  for (let i = 1; i <= 10; i++) { 
+    const rollNo = i.toString().padStart(3, "0"); // 3-digit roll number i.e., 001, 002, ...
+    const enrollNo = `${rollNo}20802722`; // rollNo + 2080 + 2722
     await db.user.upsert({
       where: { email: `student${i}@epr.com` },
       update: {},
@@ -236,7 +237,8 @@ async function main() {
 
   // IT Students
   for (let i = 1; i <= 5; i++) {
-    const enrollNo = `2022IT${i.toString().padStart(3, "0")}`;
+    const rollNo = i.toString().padStart(3, "0"); // 3-digit roll number i.e., 001, 002, ...
+    const enrollNo = `${rollNo}20902722`; // rollNo + 2090 + 2722
     await db.user.upsert({
       where: { email: `it.student${i}@epr.com` },
       update: {},
@@ -255,6 +257,7 @@ async function main() {
       },
     });
   }
+
   console.log("✅ Sample students created (student1@epr.com / student123)");
 
   // Create sample teacher assignments
@@ -264,28 +267,28 @@ async function main() {
   const teacher2 = await db.teacher.findUnique({
     where: { teacherId: "T002" },
   });
-  
+
   // Find subjects using the composite unique key
   const programmingSubject = await db.subject.findUnique({
-    where: { 
+    where: {
       code_disciplineId_semester_batch: {
         code: "CSE101",
         disciplineId: cseDiscipline.id,
         semester: 1,
-        batch: "2022-2026"
-      }
+        batch: "2022-2026",
+      },
     },
   });
-  
-  const dsSubject = await db.subject.findUnique({ 
-    where: { 
+
+  const dsSubject = await db.subject.findUnique({
+    where: {
       code_disciplineId_semester_batch: {
         code: "CSE102",
         disciplineId: cseDiscipline.id,
         semester: 2,
-        batch: "2022-2026"
-      }
-    } 
+        batch: "2022-2026",
+      },
+    },
   });
 
   if (teacher1 && programmingSubject) {

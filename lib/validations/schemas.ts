@@ -33,14 +33,17 @@ export const createTeacherSchema = z.object({
 
 // Marks Schemas
 export const marksSchema = z.object({
-  studentId: z.string().min(1, 'Student is required'),
-  teacherSubjectId: z.string().min(1, 'Subject assignment is required'),
-  midSem: z.number().min(0).max(100).optional(),
-  endSem: z.number().min(0).max(100).optional(),
-  internal: z.number().min(0).max(100).optional(),
-})
+  studentId: z.string().min(1, "Student is required"),
+  teacherSubjectId: z.string().min(1, "Subject assignment is required"),
+  midSem: z.number().min(0).max(30).optional(), // Max 30 for mid sem
+  endSem: z.number().min(0).max(50).optional(), // Max 50 for end sem
+  internal: z.number().min(0).max(20).optional(), // Max 20 for internal
+  total: z.number().min(0).max(100).optional(),
+});
 
-export const uploadMarksSchema = z.array(marksSchema)
+export const uploadMarksSchema = z.object({
+  marks: z.array(marksSchema).min(1, "At least one mark entry is required"),
+});
 
 // Subject Schemas
 export const createSubjectSchema = z.object({
@@ -51,6 +54,7 @@ export const createSubjectSchema = z.object({
   disciplineId: z.string().min(1, 'Discipline is required'),
 })
 
+// Assignment Schemas
 export const assignTeacherSchema = z.object({
   teacherId: z.string().min(1, 'Teacher is required'),
   subjectId: z.string().min(1, 'Subject is required'),
@@ -58,6 +62,11 @@ export const assignTeacherSchema = z.object({
   startRoll: z.number().min(1, 'Start roll is required'),
   endRoll: z.number().min(1, 'End roll is required'),
 })
+
+// Teacher schemas
+export const teacherAssignmentSchema = z.object({
+  assignmentId: z.string().min(1, "Assignment ID is required"),
+});
 
 // Advice Schemas
 export const adviceSchema = z.object({
@@ -74,3 +83,5 @@ export type MarksInput = z.infer<typeof marksSchema>
 export type CreateSubjectInput = z.infer<typeof createSubjectSchema>
 export type AssignTeacherInput = z.infer<typeof assignTeacherSchema>
 export type AdviceInput = z.infer<typeof adviceSchema>
+export type TeacherAssignmentInput = z.infer<typeof teacherAssignmentSchema>;
+export type UploadMarksInput = z.infer<typeof uploadMarksSchema>;
