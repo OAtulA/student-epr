@@ -10,7 +10,8 @@ import {
   BookOpen, 
   MessageSquare,
   Star,
-  LogOut
+  LogOut,
+  Brain
 } from 'lucide-react'
 
 const studentRoutes = [
@@ -34,6 +35,11 @@ const studentRoutes = [
     label: 'Give Advice',
     icon: Star,
   },
+  {
+    href: '/student/ai-advice', 
+    label: 'AI Insights',
+    icon: Brain,
+  }
 ]
 
 interface StudentSidebarNavProps {
