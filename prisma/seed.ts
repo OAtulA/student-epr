@@ -213,7 +213,7 @@ async function main() {
   const hashedStudentPassword = await bcrypt.hash("student123", 12);
 
   // CSE Students
-  for (let i = 1; i <= 10; i++) { 
+  for (let i = 1; i <= 10; i++) {
     const rollNo = i.toString().padStart(3, "0"); // 3-digit roll number i.e., 001, 002, ...
     const enrollNo = `${rollNo}20802722`; // rollNo + 2080 + 2722
     await db.user.upsert({
@@ -357,6 +357,70 @@ async function main() {
     });
   }
   console.log("✅ Sample teacher assignments created");
+
+  // Create sample advice entries
+
+  console.log("Creating sample advice...");
+
+  // Get some students
+  const sampleStudent1 = await db.student.findFirst({
+    where: { name: "Student 1" },
+  });
+  const sampleStudent2 = await db.student.findFirst({
+    where: { name: "Student 2" },
+  });
+  const sampleStudent3 = await db.student.findFirst({
+    where: { name: "IT Student 1" },
+  });
+
+  // Get some subjects
+  const sampleSubject1 = await db.subject.findFirst({
+    where: { code: "CSE101", batch: "2022-2026" },
+  });
+  const sampleSubject2 = await db.subject.findFirst({
+    where: { code: "CSE102", batch: "2022-2026" },
+  });
+
+  // General (no subject)
+  await db.advice.create({
+    data: {
+      studentId: sampleStudent1!.id,
+      advice: "Attend classes regularly and revise weekly.",
+      isGeneral: true,
+    },
+  });
+
+  // Subject-specific
+  await db.advice.create({
+    data: {
+      studentId: sampleStudent1!.id,
+      subjectId: sampleSubject1!.id,
+      advice: "Work on your C programming basics and complete lab assignments.",
+      isGeneral: false,
+    },
+  });
+
+  await db.advice.create({
+    data: {
+      studentId: sampleStudent2!.id,
+      subjectId: sampleSubject2!.id,
+      advice:
+        "Your problem-solving is improving. Focus on pointer-based linked list problems.",
+      isGeneral: false,
+    },
+  });
+
+  // IT student advice
+  await db.advice.create({
+    data: {
+      studentId: sampleStudent3!.id,
+      advice:
+        "Good progress. Maintain consistency and participate in discussions.",
+      isGeneral: true,
+    },
+  });
+
+  console.log("✅ Sample advice created");
 
   console.log("🎉 Seeding completed!");
 }
