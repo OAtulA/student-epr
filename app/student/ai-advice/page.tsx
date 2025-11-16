@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Brain, Sparkles, Lightbulb, TrendingUp, Loader2 } from "lucide-react";
+import { MarkdownResponse } from "@/components/student/MarkdownResponse";
 
 interface AISummary {
   summary: string;
@@ -21,6 +22,7 @@ interface AISummary {
   warnings: string[];
   generatedAt: string;
 }
+
 
 export default function AIAdvicePage() {
   const [aiSummary, setAiSummary] = useState<AISummary | null>(null);
@@ -53,7 +55,8 @@ export default function AIAdvicePage() {
       const response = await fetch("/api/student/ai/summary");
       if (response.ok) {
         const data = await response.json();
-        setAiSummary(data.summary);
+        const parsed = parseAISummary(data.summary);
+        setAiSummary(parsed);
       } else {
         alert("Failed to generate AI summary");
       }
@@ -83,7 +86,8 @@ export default function AIAdvicePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setCustomAnswer(data.data);
+        const parsedResponse = parseAIResponse(data.data);
+        setCustomAnswer(parsedResponse);
       } else {
         alert("Failed to get AI answer");
       }
@@ -95,17 +99,55 @@ export default function AIAdvicePage() {
     }
   };
 
-  const parseAISummary = (summary: string) => {
+  const parseAISummary = (summary: string): AISummary => {
     // Simple parsing logic - you might want to make this more robust
-    const lines = summary.split('\n').filter(line => line.trim());
-    
+    const lines = summary.split("\n").filter((line) => line.trim());
+
     return {
       summary: lines[0] || "No summary available",
-      keyThemes: lines.filter(line => line.includes('•') || line.includes('-')).slice(0, 5),
-      recommendations: lines.filter(line => line.toLowerCase().includes('recommend') || line.includes('✅')).slice(0, 3),
-      warnings: lines.filter(line => line.toLowerCase().includes('avoid') || line.includes('⚠️')).slice(0, 2),
+      keyThemes: lines
+        .filter((line) => line.includes("•") || line.includes("-"))
+        .slice(0, 5),
+      recommendations: lines
+        .filter(
+          (line) =>
+            line.toLowerCase().includes("recommend") || line.includes("✅")
+        )
+        .slice(0, 3),
+      warnings: lines
+        .filter(
+          (line) => line.toLowerCase().includes("avoid") || line.includes("⚠️")
+        )
+        .slice(0, 2),
       generatedAt: new Date().toISOString(),
     };
+  };
+
+  const parseAIResponse = (response: string): string => {
+    // Format and structure the AI response with better markdown formatting
+    // Add consistent spacing between sections
+    const lines = response.split("\n");
+    const formatted: string[] = [];
+
+    lines.forEach((line, index) => {
+      formatted.push(line);
+
+      // Add spacing after headings and list items for better readability
+      if (
+        line.startsWith("#") ||
+        line.match(/^[-•*]\s/) ||
+        line.match(/^\d+\.\s/)
+      ) {
+        if (index < lines.length - 1 && lines[index + 1].trim() !== "") {
+          // Don't add space if next line is also special
+          if (!lines[index + 1].match(/^[-•*#\d+.]/)) {
+            // Space added after heading/list before regular text
+          }
+        }
+      }
+    });
+
+    return formatted.join("\n");
   };
 
   return (
@@ -125,46 +167,54 @@ export default function AIAdvicePage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Advice</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Advice
+              </CardTitle>
               <Sparkles className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{adviceStats.totalAdvice}</div>
-              <p className="text-xs text-muted-foreground">
-                Pieces analyzed
-              </p>
+              <div className="text-2xl font-bold">
+                {adviceStats.totalAdvice}
+              </div>
+              <p className="text-xs text-muted-foreground">Pieces analyzed</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">AI Ready</CardTitle>
               <Brain className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{adviceStats.aiReady ? "Yes" : "No"}</div>
+              <div className="text-2xl font-bold">
+                {adviceStats.aiReady ? "Yes" : "No"}
+              </div>
               <p className="text-xs text-muted-foreground">
                 AI Analysis available
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Key Themes</CardTitle>
               <Lightbulb className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{adviceStats.themesCount}</div>
+              <div className="text-2xl font-bold">
+                {adviceStats.themesCount}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Identified patterns
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Last Updated
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -205,9 +255,14 @@ export default function AIAdvicePage() {
                   <Label className="text-sm font-medium">Key Themes</Label>
                   <div className="mt-2 space-y-1">
                     {aiSummary.keyThemes.map((theme, index) => (
-                      <div key={index} className="flex items-start space-x-2 text-sm">
+                      <div
+                        key={index}
+                        className="flex items-start space-x-2 text-sm"
+                      >
                         <Lightbulb className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                        <span>{theme.replace('•', '').replace('-', '').trim()}</span>
+                        <span>
+                          {theme.replace("•", "").replace("-", "").trim()}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -218,9 +273,12 @@ export default function AIAdvicePage() {
                   <Label className="text-sm font-medium">Recommendations</Label>
                   <div className="mt-2 space-y-1">
                     {aiSummary.recommendations.map((rec, index) => (
-                      <div key={index} className="flex items-start space-x-2 text-sm">
+                      <div
+                        key={index}
+                        className="flex items-start space-x-2 text-sm"
+                      >
                         <TrendingUp className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-                        <span>{rec.replace('✅', '').trim()}</span>
+                        <span>{rec.replace("✅", "").trim()}</span>
                       </div>
                     ))}
                   </div>
@@ -229,22 +287,24 @@ export default function AIAdvicePage() {
                 {/* Warnings */}
                 {aiSummary.warnings.length > 0 && (
                   <div>
-                    <Label className="text-sm font-medium">Things to Avoid</Label>
+                    <Label className="text-sm font-medium">
+                      Things to Avoid
+                    </Label>
                     <div className="mt-2 space-y-1">
                       {aiSummary.warnings.map((warning, index) => (
-                        <Badge key={index} variant="destructive" className="text-xs">
-                          {warning.replace('⚠️', '').trim()}
+                        <Badge
+                          key={index}
+                          variant="destructive"
+                          className="text-xs"
+                        >
+                          {warning.replace("⚠️", "").trim()}
                         </Badge>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <Button 
-                  onClick={generateAISummary} 
-                  variant="outline" 
-                  size="sm"
-                >
+                <Button onClick={generateAISummary} variant="outline" size="sm">
                   <Sparkles className="h-4 w-4 mr-2" />
                   Regenerate Summary
                 </Button>
@@ -256,8 +316,8 @@ export default function AIAdvicePage() {
                 <p className="text-muted-foreground mb-4">
                   Generate a smart summary of all senior advice using AI
                 </p>
-                <Button 
-                  onClick={generateAISummary} 
+                <Button
+                  onClick={generateAISummary}
                   disabled={isGeneratingSummary}
                 >
                   {isGeneratingSummary ? (
@@ -300,8 +360,8 @@ export default function AIAdvicePage() {
               />
             </div>
 
-            <Button 
-              onClick={askCustomQuestion} 
+            <Button
+              onClick={askCustomQuestion}
               disabled={isGeneratingAnswer}
               className="w-full"
             >
@@ -319,11 +379,13 @@ export default function AIAdvicePage() {
             </Button>
 
             {customAnswer && (
-              <div className="mt-4 p-4 bg-purple-50 rounded-lg border">
-                <Label className="text-sm font-medium text-purple-700">AI Response</Label>
-                <p className="text-sm text-purple-800 mt-2 whitespace-pre-wrap">
-                  {customAnswer}
-                </p>
+              <div className="mt-4 p-4 bg-linear-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                <Label className="text-sm font-medium text-purple-700">
+                  AI Response
+                </Label>
+                <div className="mt-3 text-sm text-purple-900 max-w-none">
+                  <MarkdownResponse content={customAnswer} />
+                </div>
               </div>
             )}
 
@@ -344,7 +406,9 @@ export default function AIAdvicePage() {
                     className="w-full justify-start text-left h-auto py-2"
                     onClick={() => setCustomQuestion(example)}
                   >
-                    <span className="text-sm text-muted-foreground">&ldquo;{example}&rdquo;</span>
+                    <span className="text-sm text-muted-foreground">
+                      &ldquo;{example}&rdquo;
+                    </span>
                   </Button>
                 ))}
               </div>
@@ -361,7 +425,8 @@ export default function AIAdvicePage() {
             Performance Insights
           </CardTitle>
           <CardDescription>
-            AI analysis of your academic performance and personalized recommendations
+            AI analysis of your academic performance and personalized
+            recommendations
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -369,7 +434,8 @@ export default function AIAdvicePage() {
             <Brain className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">Performance Analysis</h3>
             <p className="text-muted-foreground mb-4">
-              Connect your marks data to get personalized AI insights about your academic performance
+              Connect your marks data to get personalized AI insights about your
+              academic performance
             </p>
             <Button variant="outline">
               <TrendingUp className="h-4 w-4 mr-2" />
