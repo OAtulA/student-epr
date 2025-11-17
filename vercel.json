@@ -1,8 +1,9 @@
 {
-  "buildCommand": "prisma generate && next build",
+  "buildCommand": "bash prisma/build.sh",
+  "framework": "nextjs",
   "env": {
-    "PRISMA_CLI_BINARY_TARGETS": "rhel-openssl-3.0.x"
-  },
-  "installCommand": "pnpm install --frozen-lockfile",
-  "framework": "nextjs"
+    "PRISMA_CLI_BINARY_TARGETS": "rhel-openssl-3.0.x",
+    "PRISMA_HIDE_UPDATE_MESSAGE": "true",
+    "SKIP_ENV_VALIDATION": "true"
+  }
 }
