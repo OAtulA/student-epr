@@ -1,8 +1,11 @@
 #!/bin/bash
+# This script is kept for local development reference
+# Vercel uses vercel.json's buildCommand instead
+
 set -e
 
-echo "🔧 Generating Prisma Client for all platforms..."
-PRISMA_CLI_BINARY_TARGETS="rhel-openssl-3.0.x" npx prisma generate --skip-engine-validation
+echo "🔧 Generating Prisma Client with rhel-openssl-3.0.x target..."
+pnpm exec prisma generate
 
 echo "✅ Prisma Client generated successfully"
 echo "📦 Building Next.js..."
