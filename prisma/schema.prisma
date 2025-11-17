@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider      = "prisma-client"
+  output        = "../lib/generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -66,23 +67,21 @@ model Discipline {
 }
 
 model Subject {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  code          String
-  name          String
-  semester      Int
-  batch         String   @default("2022-2026")
-  disciplineId  String   @db.ObjectId
-  discipline    Discipline @relation(fields: [disciplineId], references: [id])
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  code         String
+  name         String
+  semester     Int
+  batch        String     @default("2022-2026")
+  disciplineId String     @db.ObjectId
+  discipline   Discipline @relation(fields: [disciplineId], references: [id])
 
   teacherSubjects TeacherSubject[]
   marks           Marks[]
   advice          Advice[]
 
   @@unique([code, disciplineId, semester, batch])
-
   @@map("subjects")
 }
-
 
 model TeacherSubject {
   id        String @id @default(auto()) @map("_id") @db.ObjectId

@@ -1,0 +1,9 @@
+.git
+.gitignore
+README.md
+.env
+.env.local
+node_modules/.bin
+node_modules/.cache
+node_modules/.pnpm
+.next/cache
